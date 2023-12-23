@@ -1,6 +1,4 @@
 // WBCS fputs
-#define _UNICODE
-#define UNICODE
 #include <stdio.h>
 
 // main() function for wchar_t(unicode) set
