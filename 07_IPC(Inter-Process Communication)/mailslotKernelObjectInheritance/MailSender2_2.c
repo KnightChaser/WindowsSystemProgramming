@@ -36,7 +36,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 
         // Write a file(data) to the mailslot datastream
         if (!WriteFile(hMailSlot, message, (_tcslen(message) + 1) * sizeof(TCHAR), &bytesWritten, NULL)) {
-            _fputts(_T("Unable to write...\n"), stdout);
+            _tprintf(_T("Unable to write... (WINAPI32 Error code: %d)\n"), GetLastError());
             _gettchar();
             CloseHandle(hMailSlot);
             return -1;
