@@ -49,7 +49,8 @@ int _tmain(int argc, TCHAR* argv[]) {
 	CloseHandle(processInformation.hThread);
 
 	_fputts(_T("[Parent Process]\n"), stdout);
-	_tprintf(_T("The current(parent) process handle value: %d\n"), hProcess);
+	_tprintf(_T("GetCurrentProcess() returns pseudo handle(value: %d) actually.\n"), GetCurrentProcess());
+	_tprintf(_T("However, after DuplicateHandle(), we obtain the real handle value: %d\n"), hProcess);
 	_fputts(_T("OwO\n"), stdout);
 
 	return 0;
