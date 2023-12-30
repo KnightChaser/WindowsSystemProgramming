@@ -16,8 +16,9 @@ int _tmain(int argc, TCHAR* argv[]) {
 
 	if (!CreateProcess(
 		NULL, childProcessName, NULL, NULL, FALSE,
-		CREATE_NEW_CONSOLE,
-		NULL, NULL, &startupInformation, &processInformation)) {
+		CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT,
+		NULL,		// lpVOID lpEnvironment (-> Register the parent process environ to its child) 
+		NULL, &startupInformation, &processInformation)) {
 		_tprintf(_T("Failed to create a child process. Obtained an error code: %d\n"), GetLastError());
 		return -1;
 	}
