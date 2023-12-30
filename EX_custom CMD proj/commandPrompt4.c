@@ -167,7 +167,9 @@ int CmdProcessing(UINT tokenNum) {
 	else if (!(_tcscmp(cmdTokenList[0], _T("kp")))) {
 		// first parameter(cmdTokenList[1]) should be entered as a target process name(e.g. CalculatorApp.exe) to kill
 		// Capitalization will be ignored due to the program's tokenization. (Ref to terminateProcess())
-		if (_countof(cmdTokenList[1]) > 0) {
+		//  |--- The first parameter(process name) should be entered
+		//									  |--- No more parameter except for the first parameter is expected.
+		if (_countof(cmdTokenList[1]) > 0 && _countof(cmdTokenList[2]) == 0) {
 			if (terminateProcess(cmdTokenList[1]))
 				_fputts(_T("Operation successfully conducted.\n"), stdout);
 			else
