@@ -18,7 +18,7 @@ int _tmain(int argc, TCHAR* argv[]) {
 	else if(GetLastError() == ERROR_ENVVAR_NOT_FOUND)
 		_tprintf(_T("Could not load variable \"%s\".\n"), targetEnvironKey);
 
-	Sleep(100000);
+	_gettchar();
 	return 0;
 
 }
