@@ -1,5 +1,3 @@
-// Just happy new year 2024!
-// The first GitHub commit in 2024
 #include <stdio.h>
 #include <windows.h>
 #include <tchar.h>
@@ -8,7 +6,7 @@
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow);
 
-int main(void) {
+int _tmain(int argc, TCHAR* argv[]) {
 
     _fputts(_T("Bye bye 2023!\n"), stdout);
     HINSTANCE hInstance = GetModuleHandle(NULL);
