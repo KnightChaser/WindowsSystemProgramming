@@ -11,8 +11,6 @@ int _tmain(int argc, TCHAR* argv[]) {
     _fputts(_T("Bye bye 2023!\n"), stdout);
     HINSTANCE hInstance = GetModuleHandle(NULL);
     return WinMain(hInstance, NULL, GetCommandLine(), SW_SHOWNORMAL);
-
-    return 0;
 }
 
 
