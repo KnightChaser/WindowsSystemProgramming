@@ -69,13 +69,13 @@ BOOL terminateProcess(TCHAR* targetProcessName) {
 		return FALSE;
 	}
 	else
-		_tprintf(_T("Target process(%s) handle found => %ld\n"), targetProcessName, (UINT)targetProcessHandle);
+		_tprintf(_T("Target process(%s) handle found => %llu\n"), targetProcessName, (ULONG_PTR)targetProcessHandle);
 
 	// Terminate the target process by the obtained HANDLE value
 	BOOL isProcessTerminated = TerminateProcess(targetProcessHandle, 0);
 	if (!isProcessTerminated) {
-		_tprintf(_T("Failed to terminate the process(%s(PID: %d)) with handle(%ld). Got an error code %d\n"),
-			targetProcessName, targetProcessID, (UINT)targetProcessHandle, GetLastError());
+		_tprintf(_T("Failed to terminate the process(%s(PID: %d)) with handle(%llu). Got an error code %d\n"),
+			targetProcessName, targetProcessID, (ULONG_PTR)targetProcessHandle, GetLastError());
 		return FALSE;
 	}
 	else
