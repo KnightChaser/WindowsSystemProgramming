@@ -1,4 +1,3 @@
-// parentProcess.c
 // standard output redirection example
 #include <stdio.h>
 #include <tchar.h>
@@ -18,10 +17,10 @@ int _tmain(int argc, TCHAR* argv[]) {
 		&fileSecurityAttribute, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	// The output of the process will be redirected to the file(output.txt <- TCHAR fileName[])
-	startupInformation.hStdOutput = hFile;
-	startupInformation.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
-	startupInformation.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-	startupInformation.dwFlags |= STARTF_USESTDHANDLES;
+	startupInformation.hStdOutput = hFile;								// set standard output as hFile (file handle)
+	startupInformation.hStdInput = GetStdHandle(STD_INPUT_HANDLE);		// set standard input as STD_INPUT_HANDLE(std. input)
+	startupInformation.hStdError = GetStdHandle(STD_ERROR_HANDLE);		// set standard output as STD_OUTPUT_HANDLE(std. output)
+	startupInformation.dwFlags |= STARTF_USESTDHANDLES;					// logical OR append STARTF_USESTDHANDLES for std I/O handle designation
 
 	TCHAR command[] = _T("example.exe");
 	if (!CreateProcess(NULL, command, NULL, NULL,
