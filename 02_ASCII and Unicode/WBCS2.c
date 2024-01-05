@@ -4,8 +4,8 @@
 // main() function for wchar_t(unicode) set
 int wmain(int argc, wchar_t* argv[]) {
 
-    for(int i = 1; i < argc; i++) {
-        fputws(argv[i], stdout);
+    for (unsigned int index = 1; index < argc; index++) {
+        wprintf(L"argv[%d] => %s", index, argv[index]);
         fputws(L"\n", stdout);
     }
 

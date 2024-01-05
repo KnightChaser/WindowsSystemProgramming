@@ -4,7 +4,7 @@
 
 int main(void) {
 
-    char str[] = "ABC한글"; // 3 are alphabet(1 byte/char), 2 are hangul(3 byte/char)
+    char str[] = "ABC한글";  // 3 are alphabet(1 byte/char), 2 are hangul(2 byte/char)
                             // traditional problem of MBCS system
     int size = sizeof(str);
     int len = strlen(str);
