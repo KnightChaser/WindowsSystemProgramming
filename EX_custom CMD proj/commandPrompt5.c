@@ -8,7 +8,7 @@
 #include <Windows.h>
 #include <stdbool.h>
 #include <TlHelp32.h>
-// #define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 
 // Overall variables
 #define STR_LEN 256
@@ -170,13 +170,14 @@ int CmdProcessing(UINT tokenNum) {
 		// first parameter(cmdTokenList[1]) should be entered as a target process name(e.g. CalculatorApp.exe) to kill
 		// Capitalization will be ignored due to the program's tokenization. (Ref to terminateProcess())
 		//  |--- The first parameter(process name) should be entered
-		//									  |--- No more parameter except for the first parameter is expected.
-		if (_countof(cmdTokenList[1]) > 0 && _countof(cmdTokenList[2]) == 0) {
+		//			    |--- No more parameter except for the first parameter is expected.
+		if (tokenNum == 2) {
 			if (terminateProcess(cmdTokenList[1]))
 				_fputts(_T("Operation successfully conducted.\n"), stdout);
 			else
 				_fputts(_T("Operation failed or abnormally exited.\n"), stdout);
-		} else
+		}
+		else
 			_fputts(_T("Wrong usage. Usage: kp [processNameToKill]\n"), stdout);
 	}
 	// Using WINDOWS32 sort.exe IO redirection
@@ -184,7 +185,8 @@ int CmdProcessing(UINT tokenNum) {
 		// type like sort.exe > outputFileExample.txt
 		if (!(_tcscmp(cmdTokenList[1], _T(">"))) && _countof(cmdTokenList[2]) > 0) {
 			sortExeRedirected(cmdTokenList[2]);
-		} else
+		}
+		else
 			_fputts(_T("Wrong usage. Usage: sort > [outputFileName]\n"), stdout);
 	}
 	else if (!(_tcscmp(cmdTokenList[0], _T("owo")))) {
