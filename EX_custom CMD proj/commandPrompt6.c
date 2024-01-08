@@ -381,13 +381,9 @@ BOOL sortExeRedirected(TCHAR* outputRedirectedFilename) {
 	SECURITY_ATTRIBUTES fileSecurityAttribute = { 0, };
 	fileSecurityAttribute.bInheritHandle = TRUE;		// This should be true for redirection
 
-	HANDLE hFile;
-	if (!strncmp(outputRedirectedFilename, _T("stdout"), _countof(_T("stdout"))))
-		// stdout redirection
-		hFile = GetStdHandle(STD_OUTPUT_HANDLE);
-	else
-		hFile = CreateFile(outputRedirectedFilename, GENERIC_WRITE, FILE_SHARE_READ,
-							&fileSecurityAttribute, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE hFile = CreateFile(
+		outputRedirectedFilename, GENERIC_WRITE, FILE_SHARE_READ,
+		&fileSecurityAttribute, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	// The output of the process will be redirected to the file(output.txt <- TCHAR fileName[])
 	startupInformation.hStdOutput = hFile;								// set standard output as hFile (file handle)
