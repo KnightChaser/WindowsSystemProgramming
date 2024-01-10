@@ -8,7 +8,7 @@
 #include <Windows.h>
 #include <stdbool.h>
 #include <TlHelp32.h>
-#define _CRT_SECURE_NO_WARNINGS
+// #define _CRT_SECURE_NO_WARNINGS
 
 // Overall variables
 #define STR_LEN 256
@@ -24,7 +24,7 @@ UINT CmdTokenizeAfterRead();
 BOOL listProcessInformation();
 BOOL terminateProcess(TCHAR* targetProcessName);
 BOOL sortExeRedirected(TCHAR* outputRedirectedFilename);
-void readFileContent(TCHAR* filepath);
+void typeTextFile(UINT tokenNum);
 
 TCHAR cmdString[STR_LEN];
 TCHAR cmdTokenList[CMD_TOKEN_NUM][STR_LEN];
@@ -185,7 +185,7 @@ int CmdProcessing(UINT tokenNum) {
 	else if (!(_tcscmp(cmdTokenList[0], _T("sort")))) {
 		// type like sort.exe > outputFileExample.txt
 		if (!(_tcscmp(cmdTokenList[1], _T(">"))) && _countof(cmdTokenList[2]) > 0) {
-			sortExeRedirected(cmdTokenList[2]);
+			sortExeRedirected(cmdTokenList);
 		}
 		else
 			_fputts(_T("Wrong usage. Usage: sort > [outputFileName]\n"), stdout);
@@ -194,11 +194,11 @@ int CmdProcessing(UINT tokenNum) {
 		_fputts(_T("UwU\n"), stdout);
 	}
 	else if (!(_tcscmp(cmdTokenList[0], _T("type")))) {
-		if (tokenNum == 2) {
-			readFileContent(cmdTokenList[1]);
+		if (tokenNum >= 2) {
+			typeTextFile(tokenNum);
 		}
 		else
-			_fputts(_T("Wrong usage. Usage: type [fileNameToRead]\n"), stdout);
+			_fputts(_T("Wrong usage. Usage: type [fileNameToRead] (| sort ...)\n"), stdout);
 	}
 	// if there is nothing received, just immediately finish
 	else if (!(_tcscmp(cmdTokenList[0], _T("")))) {
@@ -381,9 +381,13 @@ BOOL sortExeRedirected(TCHAR* outputRedirectedFilename) {
 	SECURITY_ATTRIBUTES fileSecurityAttribute = { 0, };
 	fileSecurityAttribute.bInheritHandle = TRUE;		// This should be true for redirection
 
-	HANDLE hFile = CreateFile(
-		outputRedirectedFilename, GENERIC_WRITE, FILE_SHARE_READ,
-		&fileSecurityAttribute, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE hFile;
+	if (!_tcsncmp(outputRedirectedFilename, _T("stdout"), _countof(_T("stdout"))))
+		// stdout redirection
+		hFile = GetStdHandle(STD_OUTPUT_HANDLE);
+	else
+		hFile = CreateFile(outputRedirectedFilename, GENERIC_WRITE, FILE_SHARE_READ,
+			&fileSecurityAttribute, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	// The output of the process will be redirected to the file(output.txt <- TCHAR fileName[])
 	startupInformation.hStdOutput = hFile;								// set standard output as hFile (file handle)
@@ -408,33 +412,93 @@ BOOL sortExeRedirected(TCHAR* outputRedirectedFilename) {
 }
 
 /// <summary>
-///  Read file located in "TCHAR* filepath" and save the content to the fileContent
-///  (TCHAR array), and return the array as a ptr
+/// typing(read file content and print it on the console) feature with "type.exe"
+/// - (NO PIPE example): $ type example.txt  -> just print it out on the console
+/// - (   PIPE example): $ type example.txt | sort > stdout -> read the file content and feed the result to the sort, and print the sorted result on the console(stdout)
 /// </summary>
-/// <param name="filepath">The filepath that the user wants to read</param>
-/// <returns></returns>
-void readFileContent(const TCHAR* filepath) {
-	FILE* targetFilePtr = _tfopen(filepath, _T("rt"));
-	const UINT bufferReadSize = 4096;
+/// <param name="tokenNum">(global) tokenized number of the full instruction triggered this function call</param>
+void typeTextFile(UINT tokenNum) {
 
-	if (targetFilePtr == NULL) {
-		_tprintf(_T("Error opening file: %s\n"), filepath);
-		return;
+	TCHAR* filepath = cmdTokenList[1];
+	TCHAR cmdStringWithOptions[STR_LEN];
+	ZeroMemory(&cmdStringWithOptions, sizeof(cmdStringWithOptions));
+
+	if (tokenNum == 2) {
+		// The pipeline won't be used. Only type the file.
+		// "./type.exe" will handle the task!
+		_stprintf(cmdStringWithOptions, _T("%s.exe"), cmdTokenList[0]);
+		_stprintf(cmdStringWithOptions, _T("%s %s"), cmdStringWithOptions, cmdTokenList[1]);
+		STARTUPINFO startupInformation = { 0, };
+		startupInformation.cb = sizeof(startupInformation);
+		PROCESS_INFORMATION processInformation;
+		
+		BOOL isProcessRunning
+			= CreateProcess(NULL, cmdStringWithOptions,
+				NULL, NULL, FALSE, 0, NULL, NULL,
+				&startupInformation, &processInformation);
+		WaitForSingleObject(processInformation.hProcess, INFINITE);
+		CloseHandle(processInformation.hProcess);
+		CloseHandle(processInformation.hThread);
 	}
 
-	TCHAR* bufferRead = (TCHAR*)malloc(bufferReadSize * sizeof(TCHAR));
+	// If the pipe usage is requested
+	if (!_tcsncmp(cmdTokenList[2], _T("|"), sizeof(_T("|")))) {
+		// The pipe redirection is requested
+		// Create an anonymous pipe. Output redirection at type, Input redirection for sort
+		HANDLE hReadPipe, hWritePipe;
+		SECURITY_ATTRIBUTES pipeSecurityAttributes = {
+			sizeof(SECURITY_ATTRIBUTES),
+			NULL,
+			TRUE
+		};
+		CreatePipe(&hReadPipe, &hWritePipe, &pipeSecurityAttributes, 0);
 
-	if (bufferRead == NULL) {
-		_tprintf(_T("Memory allocation failed during reading the file %s, obtained an error code %d\n"), 
-					filepath, GetLastError());
-		fclose(targetFilePtr);
-		return;
+		// Create a process of writer at the pipe ("type" in "type example.txt | sort")
+		STARTUPINFO startupInformationTypeCommand;
+		ZeroMemory(&startupInformationTypeCommand, sizeof(startupInformationTypeCommand));
+		startupInformationTypeCommand.cb = sizeof(startupInformationTypeCommand);
+		PROCESS_INFORMATION processInformationTypeCommand;
+
+		startupInformationTypeCommand.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+		startupInformationTypeCommand.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+		startupInformationTypeCommand.hStdOutput = hWritePipe;
+		startupInformationTypeCommand.dwFlags |= STARTF_USESTDHANDLES;
+
+		// trigger the instruction "[command] [argument(1x)]"
+		_tcscpy(cmdStringWithOptions, cmdTokenList[0]);
+		_stprintf(cmdStringWithOptions, _T("%s %s"), cmdStringWithOptions, cmdTokenList[1]);
+		BOOL isPipeWritingProcessCreated
+			= CreateProcess(NULL, cmdStringWithOptions, NULL, NULL,
+				TRUE, 0, NULL, NULL,
+				&startupInformationTypeCommand,
+				&processInformationTypeCommand);
+		CloseHandle(processInformationTypeCommand.hThread);
+		CloseHandle(hWritePipe);
+
+		// Create a process of reader at the pipe ("sort" in "type example.txt | sort")
+		STARTUPINFO startupInformationSortCommand;
+		ZeroMemory(&startupInformationSortCommand, sizeof(startupInformationSortCommand));
+		startupInformationSortCommand.cb = sizeof(startupInformationSortCommand);
+		PROCESS_INFORMATION processInformationSortCommand;
+
+		startupInformationSortCommand.hStdInput = hReadPipe;
+		startupInformationSortCommand.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+		startupInformationSortCommand.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+		startupInformationSortCommand.dwFlags |= STARTF_USESTDHANDLES;
+
+		BOOL isPipeReadingProcessCreated
+			= CreateProcess(NULL, cmdTokenList[3], NULL, NULL,
+				TRUE, 0, NULL, NULL,
+				&startupInformationSortCommand,
+				&processInformationSortCommand);
+		CloseHandle(processInformationSortCommand.hThread);
+
+		WaitForSingleObject(processInformationTypeCommand.hProcess, INFINITE);
+		WaitForSingleObject(processInformationSortCommand.hProcess, INFINITE);
+		CloseHandle(processInformationTypeCommand.hProcess);
+		CloseHandle(processInformationSortCommand.hProcess);
 	}
-
-	while (_fgetts(bufferRead, bufferReadSize, targetFilePtr)) {
-		_fputts(bufferRead, stdout);
+	else {
+		_fputts(_T("It seems that you got wrong place. :(\n"), stdout);
 	}
-
-	free(bufferRead);
-	fclose(targetFilePtr);
 }
